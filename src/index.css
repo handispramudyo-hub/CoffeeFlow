@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #f2f0eb; /* Warna putih krem Starbucks */
+  color: #1e3932; /* Warna teks hijau tua */
+  font-family: sans-serif;
+}
+
+/* Custom Scrollbar Starbucks Vibe */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f2f0eb;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e3932;
+  border-radius: 3px;
+}
