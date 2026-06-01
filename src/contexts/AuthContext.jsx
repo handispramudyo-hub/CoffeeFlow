@@ -21,7 +21,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId) => {
-    const { data } = await supabase.from("users").select("*").eq("id", userId).single();
+    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+    if (error) console.error("fetchProfile error:", error.message);
     if (data) setProfile(data);
   };
 
@@ -51,7 +52,8 @@ export const AuthProvider = ({ children }) => {
     });
     if (error) throw error;
     if (data.user) {
-      await supabase.from("users").insert([{ id: data.user.id, email, full_name: fullName, role }]);
+      const { error: insertError } = await supabase.from("users").insert([{ id: data.user.id, email, full_name: fullName, role }]);
+      if (insertError) throw insertError;
       await fetchProfile(data.user.id);
     }
     return data;
