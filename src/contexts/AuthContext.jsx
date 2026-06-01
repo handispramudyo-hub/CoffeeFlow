@@ -5,60 +5,80 @@ const AuthContext = createContext({});
 
 export const useAuth = () => useContext(AuthContext);
 
+const ROLES = { owner: "owner", manager: "manager", cashier: "cashier" };
+
+const ROLE_PERMISSIONS = {
+  [ROLES.owner]: ["dashboard", "menu", "pos", "inventory", "reports", "customers", "loyalty", "ai", "settings"],
+  [ROLES.manager]: ["dashboard", "menu", "inventory", "reports"],
+  [ROLES.cashier]: ["pos"],
+};
+
+export { ROLES, ROLE_PERMISSIONS };
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = async (userId) => {
+    const { data } = await supabase.from("users").select("*").eq("id", userId).single();
+    if (data) setProfile(data);
+  };
+
   useEffect(() => {
-    // Cek sesi yang ada saat pertama kali load
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) fetchProfile(u.id);
       setLoading(false);
     });
 
-    // Listen jika ada perubahan status login
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) fetchProfile(u.id);
+      else setProfile(null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password, fullName) => {
+  const signUp = async (email, password, fullName, role = "cashier") => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
     });
     if (error) throw error;
-
-    // Insert ke tabel users custom kita
     if (data.user) {
-      await supabase
-        .from("users")
-        .insert([{ id: data.user.id, email, full_name: fullName }]);
+      await supabase.from("users").insert([{ id: data.user.id, email, full_name: fullName, role }]);
+      await fetchProfile(data.user.id);
     }
     return data;
   };
 
   const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    if (data.user) await fetchProfile(data.user.id);
     return data;
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
   };
 
+  const hasPermission = (feature) => {
+    if (!profile) return false;
+    return ROLE_PERMISSIONS[profile.role]?.includes(feature) ?? false;
+  };
+
+  const isRole = (role) => profile?.role === role;
+
   return (
-    <AuthContext.Provider value={{ user, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, hasPermission, isRole }}>
       {children}
     </AuthContext.Provider>
   );

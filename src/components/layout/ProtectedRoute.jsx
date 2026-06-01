@@ -1,19 +1,23 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
-export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
+export default function ProtectedRoute({ children, feature }) {
+  const { user, loading, hasPermission } = useAuth();
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center text-coffee-800">
-        Loading...
+      <div className="h-screen flex items-center justify-center bg-coffee-50">
+        <Loader2 size={32} className="animate-spin text-coffee-500" />
       </div>
     );
+  }
 
-  // Jika tidak ada user (belum login), lempar ke halaman login
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" replace />;
 
-  // Jika ada user, tampilkan halaman yang diminta
+  if (feature && !hasPermission(feature)) {
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 }

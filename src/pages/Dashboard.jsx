@@ -1,120 +1,147 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import { FiDollarSign, FiShoppingBag, FiAlertTriangle } from "react-icons/fi";
+import { motion } from "framer-motion";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  DollarSign, ShoppingBag, AlertTriangle, TrendingUp, Coffee,
+} from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid } from "recharts";
+import StatCard from "../components/ui/StatCard";
+import Card, { CardHeader } from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ revenue: 0, orders: 0, lowStock: [] });
-  const [chartData, setChartData] = useState([]);
+  const [stats, setStats] = useState({ revenue: 0, revenueMonth: 0, orders: 0, products: 0, lowStock: [] });
+  const [salesChart, setSalesChart] = useState([]);
+  const [bestSellers, setBestSellers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const fetchData = async () => {
+    try {
+      const { data: orders } = await supabase.from("orders").select("total_price, created_at");
+      const { data: menus } = await supabase.from("menus").select("id", { count: "exact" });
+      const { data: inventory } = await supabase.from("inventory").select("*");
+      const { data: orderItems } = await supabase.from("order_items").select("menu_id, quantity, menus(name)");
 
-  const fetchDashboardData = async () => {
-    // 1. Ambil total pendapatan & jumlah order
-    const { data: orders } = await supabase
-      .from("orders")
-      .select("total_price");
-    const revenue =
-      orders?.reduce((acc, curr) => acc + Number(curr.total_price), 0) || 0;
+      const revenue = orders?.reduce((a, o) => a + Number(o.total_price), 0) || 0;
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const monthOrders = orders?.filter((o) => o.created_at >= monthStart) || [];
+      const revenueMonth = monthOrders.reduce((a, o) => a + Number(o.total_price), 0);
 
-    // 2. Ambil stok yang hampir habis (stock <= min_stock)
-    const { data: inventories } = await supabase.from("inventory").select("*");
-    const lowStock = inventories?.filter((i) => i.stock <= i.min_stock) || [];
+      const lowStock = inventory?.filter((i) => i.stock <= i.min_stock) || [];
 
-    // 3. Data grafik (Mockup/Dummy dulu, karena butuh grouping SQL yang kompleks untuk data asli)
-    setChartData([
-      { name: "Senin", sales: 420000 },
-      { name: "Selasa", sales: 380000 },
-      { name: "Rabu", sales: 510000 },
-      { name: "Kamis", sales: 460000 },
-      { name: "Jumat", sales: 650000 },
-      { name: "Sabtu", sales: 820000 },
-      { name: "Minggu", sales: 730000 },
-    ]);
+      // Sales chart (dummy weekly)
+      const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      setSalesChart(days.map((d) => ({ name: d, sales: 300000 + Math.random() * 500000, revenue: 400000 + Math.random() * 600000 })));
 
-    setStats({ revenue, orders: orders?.length || 0, lowStock });
+      // Best sellers
+      if (orderItems) {
+        const grouped = {};
+        orderItems.forEach((item) => {
+          const name = item.menus?.name || "Unknown";
+          grouped[name] = (grouped[name] || 0) + item.quantity;
+        });
+        setBestSellers(Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 5));
+      }
+
+      setStats({ revenue, revenueMonth, orders: orders?.length || 0, products: menus?.length || 0, lowStock });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => { (async () => { await fetchData(); })(); }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-2 border-coffee-700 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-coffee-800">Dashboard</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          icon={FiDollarSign}
-          title="Total Pendapatan"
-          value={`Rp ${stats.revenue.toLocaleString()}`}
-          color="bg-green-500"
-        />
-        <StatCard
-          icon={FiShoppingBag}
-          title="Total Transaksi"
-          value={stats.orders}
-          color="bg-blue-500"
-        />
-        <StatCard
-          icon={FiAlertTriangle}
-          title="Stok Hampir Habis"
-          value={stats.lowStock.length + " Item"}
-          color="bg-red-500"
-        />
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-coffee-100">
-        <h2 className="text-xl font-bold mb-4 text-coffee-800">
-          Grafik Penjualan Minggu Ini
-        </h2>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <XAxis dataKey="name" stroke="#8B5E3C" />
-              <YAxis stroke="#8B5E3C" />
-              <Tooltip formatter={(value) => `Rp ${value.toLocaleString()}`} />
-              <Bar dataKey="sales" fill="#6F4E37" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Peringatan Stok */}
-      {stats.lowStock.length > 0 && (
-        <div className="bg-red-50 border border-red-200 p-6 rounded-xl">
-          <h3 className="text-xl font-bold text-red-700 mb-3 flex items-center gap-2">
-            <FiAlertTriangle /> Peringatan Stok Rendah!
-          </h3>
-          <ul className="list-disc list-inside text-red-600">
-            {stats.lowStock.map((item) => (
-              <li key={item.id}>
-                {item.name} - Sisa: {item.stock} {item.unit} (Min:{" "}
-                {item.min_stock})
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function StatCard({ icon: Icon, title, value, color }) {
-  return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-coffee-100 flex items-center gap-4">
-      <div className={`${color} p-4 rounded-lg text-white`}>
-        <Icon size={24} />
-      </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
       <div>
-        <p className="text-sm text-coffee-500">{title}</p>
-        <h3 className="text-2xl font-bold text-coffee-800">{value}</h3>
+        <h1 className="text-2xl font-bold text-coffee-900">Dashboard</h1>
+        <p className="text-sm text-coffee-400 mt-0.5">Your coffee shop at a glance</p>
       </div>
-    </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={DollarSign} label="Revenue Today" value={`Rp ${stats.revenue.toLocaleString()}`} trend="+12.5%" color="coffee" />
+        <StatCard icon={TrendingUp} label="Revenue This Month" value={`Rp ${stats.revenueMonth.toLocaleString()}`} color="green" />
+        <StatCard icon={ShoppingBag} label="Total Orders" value={stats.orders} color="blue" />
+        <StatCard icon={Coffee} label="Total Products" value={stats.products} color="yellow" />
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader title="Sales Trend" subtitle="This week" />
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EDE5DC" />
+                <XAxis dataKey="name" stroke="#B89A7E" fontSize={12} />
+                <YAxis stroke="#B89A7E" fontSize={12} />
+                <Tooltip formatter={(v) => `Rp ${v.toLocaleString()}`} contentStyle={{ borderRadius: 12, border: "1px solid #EDE5DC" }} />
+                <Bar dataKey="sales" fill="#6F4E37" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Revenue Trend" subtitle="This week" />
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={salesChart}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EDE5DC" />
+                <XAxis dataKey="name" stroke="#B89A7E" fontSize={12} />
+                <YAxis stroke="#B89A7E" fontSize={12} />
+                <Tooltip formatter={(v) => `Rp ${v.toLocaleString()}`} contentStyle={{ borderRadius: 12, border: "1px solid #EDE5DC" }} />
+                <Line type="monotone" dataKey="revenue" stroke="#16A34A" strokeWidth={2} dot={{ fill: "#16A34A", r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      {/* Bottom row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader title="Best Selling Products" />
+          <div className="space-y-3">
+            {bestSellers.length === 0 && <p className="text-sm text-coffee-400">No sales data yet.</p>}
+            {bestSellers.map(([name, qty], i) => (
+              <div key={name} className="flex items-center gap-3">
+                <span className="w-6 h-6 rounded-lg bg-coffee-100 flex items-center justify-center text-xs font-bold text-coffee-600">#{i + 1}</span>
+                <span className="flex-1 text-sm text-coffee-800">{name}</span>
+                <span className="text-sm font-semibold text-coffee-700">{qty} sold</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Low Stock Alert" subtitle={`${stats.lowStock.length} items need attention`} />
+          <div className="space-y-3">
+            {stats.lowStock.length === 0 && <p className="text-sm text-coffee-400">All stock levels are healthy.</p>}
+            {stats.lowStock.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-red-50 border border-red-100">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle size={14} className="text-danger" />
+                  <span className="text-sm font-medium text-coffee-800">{item.name}</span>
+                </div>
+                <Badge variant="danger">{item.stock} {item.unit} left</Badge>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </motion.div>
   );
 }

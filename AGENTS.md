@@ -1,32 +1,54 @@
-# CoffeeBoss AI — AGENTS.md
+# CoffeeFlow — AGENTS.md
 
 ## Commands
 - `npm run dev` — start Vite dev server
 - `npm run build` — production build
-- `npm run lint` — ESLint (only check available; no typecheck or test)
+- `npm run lint` — ESLint (only check; no typecheck or test)
 - `npm run preview` — preview production build
 
 ## Setup
-- **Supabase**: keys are **hardcoded** in `src/lib/supabase.js:4-7` (not env vars). Do NOT extract them to `.env` without updating both the file and any live Supabase project keys.
-- **OpenAI**: set `VITE_OPENAI_API_KEY` in `.env` (project root). Required for the AI Assistant page (`src/pages/AiAssistant.jsx`). Loaded dynamically via `import("openai")` at runtime.
-- No `.env` file exists by default; create one if needed.
+- **Supabase**: keys hardcoded in `src/lib/supabase.js:3-4`. Do NOT extract to `.env` without updating both the file and the Supabase project keys.
+- **OpenAI**: set `VITE_OPENAI_API_KEY` in `.env` (project root). Used in `src/pages/AiAssistant.jsx`. OpenAI client loaded dynamically via `import("openai")`.
+- No `.env` exists by default; create one if needed.
 
 ## Architecture
-- **Framework**: React 19 + Vite 8 (no TypeScript — plain `.jsx`)
-- **CSS**: Tailwind CSS v3 via PostCSS. Custom color palette `bux-{50,100,500,700,800,900}` defined in `tailwind.config.js` (Starbucks-inspired green tones with `bux-50` as cream background, `bux-700` as dark green sidebar).
-- **Auth**: Supabase Auth via `src/contexts/AuthContext.jsx`. Protected routes use `<ProtectedRoute>` wrapper. After signup, inserts a row into a custom `users` table.
-- **Routing**: `react-router-dom` v7 with nested routes under `<DashboardLayout>`. Public: `/login`, `/register`. Protected: `/` (Dashboard), `/menu`, `/pos`, `/inventory`, `/ai`.
+- **Framework**: React 19 + Vite 8, plain `.jsx` (no TypeScript)
+- **CSS**: Tailwind CSS v3 via PostCSS. Custom `coffee` color palette in `tailwind.config.js` (primary `#6F4E37`). Also `success`/`warning`/`danger` semantic colors.
+- **Routing**: `react-router-dom` v7. Public: `/` (Landing), `/login`, `/register`, `/menu-qr` (public menu). Protected: `/dashboard/*` with nested routes.
+- **Auth**: Supabase Auth via `src/contexts/AuthContext.jsx`. Role-based access (owner/manager/cashier) with `ROLE_PERMISSIONS` map. `<ProtectedRoute feature="">` guards per-page.
 - **Entry**: `index.html` → `src/main.jsx` → `src/App.jsx`
-- **Code style**: JSX in `.jsx`, no TypeScript, Indonesian comments throughout.
+- **UI Components**: Reusable primitives in `src/components/ui/` (Button, Card, Input, Modal, Badge, Table, StatCard, EmptyState). Uses `framer-motion` for animations and `lucide-react` for icons.
+- **Data Layer**: Supabase queries in page components. `src/services/api.js` provides a wrapper.
+- **DB Schema**: `src/database/schema.sql` — full PostgreSQL schema with RPC functions.
+- **Icons**: `lucide-react` (not `react-icons/fi`).
+- **Animation**: `framer-motion` (`motion.div`, `AnimatePresence`).
 
-## Conventions
-- UI brand name is **CoffeeFlow** (not CoffeeBoss). App title in `index.html` and sidebar header uses "CoffeeFlow".
-- Sidebar nav items use `rounded-full` styling with `bg-bux-500` (green) active state.
-- Toast notifications: `react-hot-toast` positioned top-right with dark toast style (`#3E2723` bg, `#FDF8F0` text).
-- Icons: `react-icons/fi` (Feather).
-- Indonesian-language UI labels and comments.
+## Key conventions
+- UI brand name is **CoffeeFlow** throughout.
+- Sidebar uses `bg-coffee-700` active state with `rounded-xl` nav items.
+- Toast: `react-hot-toast`, dark style (`#3E2723` bg, `#FDF8F0` text).
+- All dashboard routes are under `/dashboard/*`. Landing page is at `/`.
+- Public QR menu at `/menu-qr`.
+
+## Routes overview
+| Path | Page | Auth |
+|------|------|------|
+| `/` | Landing | Public |
+| `/login` | Login | Public |
+| `/register` | Register | Public |
+| `/menu-qr` | QR Menu | Public |
+| `/dashboard` | Dashboard | Protected (dashboard) |
+| `/dashboard/menu` | Menu Management | Protected (menu) |
+| `/dashboard/pos` | POS System | Protected (pos) |
+| `/dashboard/inventory` | Inventory | Protected (inventory) |
+| `/dashboard/reports` | Reports | Protected (reports) |
+| `/dashboard/customers` | Customers | Protected (customers) |
+| `/dashboard/loyalty` | Loyalty | Protected (loyalty) |
+| `/dashboard/ai` | AI Assistant | Protected (ai) |
+| `/dashboard/settings` | Settings | Protected (settings) |
 
 ## Important notes
 - No test framework or test scripts configured.
 - No typecheck step available.
-- Supabase anon key is committed in source — do not commit sensitive keys elsewhere.
+- Supabase anon key committed in source — do not commit other secrets.
+- Pre-existing lint errors exist in `AuthContext.jsx` and several pages (function-before-declaration in useEffect). These are known and not introduced by feature work.

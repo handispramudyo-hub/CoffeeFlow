@@ -1,119 +1,143 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { motion } from "framer-motion";
+import { Plus, Search, Edit2, Trash2, Coffee } from "lucide-react";
+import toast from "react-hot-toast";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Input, { Select } from "../components/ui/Input";
+import Badge from "../components/ui/Badge";
+import Modal from "../components/ui/Modal";
+import EmptyState from "../components/ui/EmptyState";
+
+const categories = [
+  { value: "Coffee", label: "Coffee" },
+  { value: "Non-Coffee", label: "Non-Coffee" },
+  { value: "Snack", label: "Snack" },
+  { value: "Dessert", label: "Dessert" },
+];
 
 export default function MenuManagement() {
   const [menus, setMenus] = useState([]);
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-
-  // Ambil data menu dari Supabase
-  useEffect(() => {
-    fetchMenus();
-  }, []);
+  const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState("All");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ name: "", category: "Coffee", price: "", description: "", is_active: true });
 
   const fetchMenus = async () => {
-    const { data } = await supabase
-      .from("menus")
-      .select("*")
-      .order("id", { ascending: true });
+    const { data } = await supabase.from("menus").select("*").order("id");
     if (data) setMenus(data);
   };
 
-  // Fungsi Tambah Menu Baru
-  const handleAddMenu = async (e) => {
-    e.preventDefault();
-    if (!name || !price) return alert("Isi nama dan harga!");
+  useEffect(() => { (async () => { await fetchMenus(); })(); }, []);
 
-    const { data, error } = await supabase
-      .from("menus")
-      .insert([
-        {
-          name: name,
-          price: parseFloat(price),
-          category: "Coffee",
-          is_active: true,
-        },
-      ])
-      .select();
-
-    if (error) {
-      alert("Gagal menambah menu: " + error.message);
-    } else {
-      setMenus([...menus, ...data]); // Update tampilan tanpa reload
-      setName("");
-      setPrice("");
-      alert("Menu berhasil ditambahkan!");
-    }
+  const openCreate = () => {
+    setEditing(null);
+    setForm({ name: "", category: "Coffee", price: "", description: "", is_active: true });
+    setModalOpen(true);
   };
 
+  const openEdit = (menu) => {
+    setEditing(menu);
+    setForm({ name: menu.name, category: menu.category, price: String(menu.price), description: menu.description || "", is_active: menu.is_active });
+    setModalOpen(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!form.name || !form.price) return toast.error("Name and price are required");
+
+    const payload = { name: form.name, category: form.category, price: parseFloat(form.price), description: form.description, is_active: form.is_active };
+
+    if (editing) {
+      const { error } = await supabase.from("menus").update(payload).eq("id", editing.id);
+      if (error) return toast.error(error.message);
+      toast.success("Menu updated!");
+    } else {
+      const { error } = await supabase.from("menus").insert([payload]);
+      if (error) return toast.error(error.message);
+      toast.success("Menu created!");
+    }
+    setModalOpen(false);
+    fetchMenus();
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this menu item?")) return;
+    const { error } = await supabase.from("menus").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Menu deleted");
+    fetchMenus();
+  };
+
+  const filtered = menus.filter((m) => {
+    const matchSearch = m.name.toLowerCase().includes(search.toLowerCase());
+    const matchCat = filterCat === "All" || m.category === filterCat;
+    return matchSearch && matchCat;
+  });
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-coffee-800 mb-6">
-        Menu Management
-      </h1>
-
-      {/* Form Tambah Menu */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-coffee-100 mb-8">
-        <h2 className="text-xl font-bold text-coffee-700 mb-4">
-          Tambah Menu Baru
-        </h2>
-        <form onSubmit={handleAddMenu} className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <label className="block text-coffee-600 mb-1">Nama Menu</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border border-coffee-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
-              placeholder="Contoh: Latte"
-            />
-          </div>
-          <div className="w-full md:w-40">
-            <label className="block text-coffee-600 mb-1">Harga (Rp)</label>
-            <input
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full p-2 border border-coffee-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coffee-500"
-              placeholder="25000"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full md:w-auto bg-coffee-600 text-white px-6 py-2 rounded-lg hover:bg-coffee-700 transition-colors font-semibold"
-          >
-            Tambah
-          </button>
-        </form>
-      </div>
-
-      {/* Daftar Menu */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-coffee-100">
-        <h2 className="text-xl font-bold text-coffee-700 mb-4">Daftar Menu</h2>
-        <div className="space-y-3">
-          {menus.map((menu) => (
-            <div
-              key={menu.id}
-              className="flex justify-between items-center border-b border-coffee-50 pb-3"
-            >
-              <div>
-                <h3 className="font-semibold text-coffee-800">{menu.name}</h3>
-                <p className="text-sm text-coffee-500">
-                  Kategori: {menu.category}
-                </p>
-              </div>
-              <p className="font-bold text-coffee-600">
-                Rp {menu.price.toLocaleString()}
-              </p>
-            </div>
-          ))}
-          {menus.length === 0 && (
-            <p className="text-coffee-500">
-              Belum ada menu. Tambahkan di atas!
-            </p>
-          )}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-coffee-900">Menu Management</h1>
+          <p className="text-sm text-coffee-400 mt-0.5">Manage your coffee shop menu</p>
         </div>
+        <Button icon={Plus} onClick={openCreate}>Add Menu</Button>
       </div>
-    </div>
+
+      <Card>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="flex-1">
+            <Input placeholder="Search menu..." icon={Search} value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <Select options={[{ value: "All", label: "All Categories" }, ...categories]} value={filterCat} onChange={(e) => setFilterCat(e.target.value)} />
+        </div>
+
+        {filtered.length === 0 ? (
+          <EmptyState icon={Coffee} title="No menu items" description={search ? "Try a different search" : "Add your first menu item"} action={<Button onClick={openCreate}>Add Menu</Button>} />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((menu) => (
+              <div key={menu.id} className="bg-coffee-50 rounded-xl p-4 border border-coffee-100 hover:shadow-soft transition-all">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-coffee-900 truncate">{menu.name}</h3>
+                    <p className="text-xs text-coffee-400 mt-0.5">{menu.category}</p>
+                  </div>
+                  <Badge variant={menu.is_active ? "success" : "default"}>{menu.is_active ? "Active" : "Inactive"}</Badge>
+                </div>
+                <p className="text-lg font-bold text-coffee-700 mt-2">Rp {menu.price.toLocaleString()}</p>
+                {menu.description && <p className="text-xs text-coffee-400 mt-1 line-clamp-2">{menu.description}</p>}
+                <div className="flex gap-2 mt-3">
+                  <Button variant="outline" size="sm" icon={Edit2} onClick={() => openEdit(menu)}>Edit</Button>
+                  <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(menu.id)} className="text-danger hover:bg-red-50">Delete</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? "Edit Menu" : "Add Menu"}>
+        <form onSubmit={handleSave} className="space-y-4">
+          <Input label="Menu Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <div className="grid grid-cols-2 gap-4">
+            <Select label="Category" options={categories} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <Input label="Price (Rp)" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
+          </div>
+          <Input label="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="is_active" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="rounded border-coffee-300" />
+            <label htmlFor="is_active" className="text-sm text-coffee-700">Active</label>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="ghost" type="button" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button type="submit">{editing ? "Update" : "Create"}</Button>
+          </div>
+        </form>
+      </Modal>
+    </motion.div>
   );
 }

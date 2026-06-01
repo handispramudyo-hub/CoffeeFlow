@@ -1,21 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  background-color: #f2f0eb; /* Warna putih krem Starbucks */
-  color: #1e3932; /* Warna teks hijau tua */
-  font-family: sans-serif;
+@layer base {
+  body {
+    @apply bg-coffee-50 text-coffee-900 font-sans antialiased;
+  }
 }
 
-/* Custom Scrollbar Starbucks Vibe */
-::-webkit-scrollbar {
-  width: 6px;
+@layer components {
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
 }
-::-webkit-scrollbar-track {
-  background: #f2f0eb;
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #D4C5B3 transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #D4C5B3;
+    border-radius: 3px;
+  }
 }
-::-webkit-scrollbar-thumb {
-  background: #1e3932;
-  border-radius: 3px;
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
 }

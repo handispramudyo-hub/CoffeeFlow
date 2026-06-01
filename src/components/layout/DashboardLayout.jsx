@@ -1,27 +1,25 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import {
-  FiHome,
-  FiCoffee,
-  FiShoppingCart,
-  FiPackage,
-  FiCpu,
-  FiLogOut,
-  FiMenu,
-} from "react-icons/fi";
 import { useAuth } from "../../contexts/AuthContext";
+import {
+  LayoutDashboard, Coffee, ShoppingCart, Package, BarChart3, Users, Gift, Bot, Settings, LogOut, Menu, X,
+} from "lucide-react";
 
-const navItems = [
-  { to: "/", icon: FiHome, label: "Dashboard" },
-  { to: "/menu", icon: FiCoffee, label: "Menu" },
-  { to: "/pos", icon: FiShoppingCart, label: "POS" },
-  { to: "/inventory", icon: FiPackage, label: "Inventory" },
-  { to: "/ai", icon: FiCpu, label: "AI Assistant" },
+const navConfig = [
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", feature: "dashboard", end: true },
+  { to: "/dashboard/menu", icon: Coffee, label: "Menu", feature: "menu" },
+  { to: "/dashboard/pos", icon: ShoppingCart, label: "POS", feature: "pos" },
+  { to: "/dashboard/inventory", icon: Package, label: "Inventory", feature: "inventory" },
+  { to: "/dashboard/reports", icon: BarChart3, label: "Reports", feature: "reports" },
+  { to: "/dashboard/customers", icon: Users, label: "Customers", feature: "customers" },
+  { to: "/dashboard/loyalty", icon: Gift, label: "Loyalty", feature: "loyalty" },
+  { to: "/dashboard/ai", icon: Bot, label: "AI Assistant", feature: "ai" },
+  { to: "/dashboard/settings", icon: Settings, label: "Settings", feature: "settings" },
 ];
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { signOut } = useAuth();
+  const { profile, signOut, hasPermission } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -29,97 +27,83 @@ export default function DashboardLayout() {
     navigate("/login");
   };
 
+  const allowedNav = navConfig.filter((n) => hasPermission(n.feature));
+
   return (
-    <div className="flex h-screen bg-bux-50 overflow-hidden">
-      {/* Sidebar Desktop (Hijau Tua) */}
-      <aside className="hidden md:flex md:flex-shrink-0 w-64 bg-bux-700 text-white flex-col">
-        <div className="p-6 border-b border-bux-800">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            🌿 CoffeFlow
-          </h1>
-          <p className="text-xs text-bux-100 mt-1 tracking-widest uppercase">
-            Manage. Analyze. Grow.
-          </p>
+    <div className="flex h-screen bg-coffee-50 overflow-hidden">
+      {/* Sidebar */}
+      <aside className={`fixed md:relative inset-y-0 left-0 z-40 w-64 bg-white border-r border-coffee-100 flex flex-col transition-transform duration-200 md:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="p-5 border-b border-coffee-100">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-coffee-700 flex items-center justify-center text-white text-sm font-bold">CF</div>
+            <div>
+              <h1 className="text-base font-bold text-coffee-900">CoffeeFlow</h1>
+              <p className="text-[10px] text-coffee-400 uppercase tracking-widest">Management</p>
+            </div>
+          </div>
         </div>
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          {navItems.map((item) => (
+
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
+          {allowedNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.end}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-full transition-colors ${isActive ? "bg-bux-500 text-white shadow-lg" : "hover:bg-bux-800 text-bux-100"}`
+                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${isActive ? "bg-coffee-700 text-white shadow-soft" : "text-coffee-500 hover:text-coffee-900 hover:bg-coffee-100"}`
               }
             >
-              <item.icon /> {item.label}
+              <item.icon size={18} />
+              {item.label}
             </NavLink>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-bux-800">
+        {/* Profile & Logout */}
+        <div className="p-3 border-t border-coffee-100">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-coffee-200 flex items-center justify-center text-xs font-bold text-coffee-700 uppercase">
+              {profile?.full_name?.charAt(0) ?? "U"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-coffee-900 truncate">{profile?.full_name ?? "User"}</p>
+              <p className="text-[10px] text-coffee-400 capitalize">{profile?.role ?? "—"}</p>
+            </div>
+          </div>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-full hover:bg-bux-800 transition-colors text-bux-100"
+            className="flex items-center gap-3 px-3 py-2 w-full rounded-xl text-sm text-coffee-400 hover:text-coffee-700 hover:bg-coffee-100 transition-colors mt-1"
           >
-            <FiLogOut /> Logout
+            <LogOut size={16} />
+            Logout
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
-        {/* Topbar Mobile */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-bux-700 text-white shadow-md">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <FiMenu size={24} />
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="h-14 bg-white border-b border-coffee-100 flex items-center justify-between px-4 md:px-6">
+          <button className="md:hidden p-2 rounded-lg hover:bg-coffee-100 text-coffee-500" onClick={() => setSidebarOpen(true)}>
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <h1 className="font-bold text-lg">🌿 CoffeFlow</h1>
-          <div className="w-6"></div>
+          <div className="hidden md:block" />
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-coffee-400 hidden sm:block">
+              {profile?.role && `${profile.role.charAt(0).toUpperCase() + profile.role.slice(1)}`}
+            </span>
+          </div>
         </header>
 
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-bux-50">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black bg-opacity-50 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <aside
-            className="w-64 h-full bg-bux-700 text-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6 border-b border-bux-800">
-              <h1 className="text-2xl font-bold">🌿 CoffeFlow</h1>
-              <p className="text-xs text-bux-100 mt-1 tracking-widest uppercase">
-                Manage. Analyze. Grow.
-              </p>
-            </div>
-            <nav className="px-4 py-6 space-y-2">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-full hover:bg-bux-800"
-                >
-                  <item.icon /> {item.label}
-                </NavLink>
-              ))}
-            </nav>
-            <div className="p-4 border-t border-bux-800">
-              <button
-                onClick={handleSignOut}
-                className="flex items-center gap-3 px-4 py-3 w-full rounded-full hover:bg-bux-800 transition-colors"
-              >
-                <FiLogOut /> Logout
-              </button>
-            </div>
-          </aside>
-        </div>
-      )}
     </div>
   );
 }
