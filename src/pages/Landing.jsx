@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Coffee, BarChart3, Bot, Gift, ShoppingCart, Package, ArrowRight, Check } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
+import { Coffee, BarChart3, Bot, Gift, ShoppingCart, Package, ArrowRight, Check, LayoutDashboard } from "lucide-react";
 
 const features = [
   { icon: Coffee, title: "Menu Management", desc: "Manage your coffee menu with categories, images, and pricing." },
@@ -12,6 +13,7 @@ const features = [
 ];
 
 export default function Landing() {
+  const { user } = useAuth();
   return (
     <div className="min-h-screen bg-coffee-50">
       {/* Nav */}
@@ -22,8 +24,16 @@ export default function Landing() {
             <span className="font-bold text-coffee-900 text-lg">CoffeeFlow</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/login" className="text-sm font-medium text-coffee-600 hover:text-coffee-900 px-4 py-2">Sign In</Link>
-            <Link to="/register" className="text-sm font-medium bg-coffee-700 text-white px-5 py-2 rounded-xl hover:bg-coffee-800 transition-colors shadow-soft">Get Started</Link>
+            {user ? (
+              <Link to="/dashboard" className="flex items-center gap-2 text-sm font-medium bg-coffee-700 text-white px-5 py-2 rounded-xl hover:bg-coffee-800 transition-colors shadow-soft">
+                <LayoutDashboard size={16} /> Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-medium text-coffee-600 hover:text-coffee-900 px-4 py-2">Sign In</Link>
+                <Link to="/register" className="text-sm font-medium bg-coffee-700 text-white px-5 py-2 rounded-xl hover:bg-coffee-800 transition-colors shadow-soft">Get Started</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
