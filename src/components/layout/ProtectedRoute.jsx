@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldOff } from "lucide-react";
 
 export default function ProtectedRoute({ children, feature }) {
   const { user, loading, hasPermission } = useAuth();
@@ -16,7 +16,12 @@ export default function ProtectedRoute({ children, feature }) {
   if (!user) return <Navigate to="/login" replace />;
 
   if (feature && !hasPermission(feature)) {
-    return <Navigate to="/" replace />;
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-coffee-400 gap-3">
+        <ShieldOff size={48} />
+        <p className="text-lg font-medium">No Access</p>
+      </div>
+    );
   }
 
   return children;

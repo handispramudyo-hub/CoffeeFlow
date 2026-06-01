@@ -20,24 +20,34 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId) => {
+  const fetchProfile = async (userId, userEmail) => {
     const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
-    if (error) console.error("fetchProfile error:", error.message);
-    if (data) setProfile(data);
+    if (data) { setProfile(data); return; }
+    if (error && error.code !== 'PGRST116') {
+      console.error("fetchProfile error:", error.message);
+      return;
+    }
+    // No row found — auto-create owner profile so login works
+    const { data: created } = await supabase
+      .from("users")
+      .insert([{ id: userId, email: userEmail || "", full_name: "Owner", role: "owner" }])
+      .select()
+      .single();
+    if (created) setProfile(created);
   };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) fetchProfile(u.id);
+      if (u) fetchProfile(u.id, u.email);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) fetchProfile(u.id);
+      if (u) fetchProfile(u.id, u.email);
       else setProfile(null);
     });
 
@@ -54,7 +64,7 @@ export const AuthProvider = ({ children }) => {
     if (data.user) {
       const { error: insertError } = await supabase.from("users").insert([{ id: data.user.id, email, full_name: fullName, role }]);
       if (insertError) throw insertError;
-      await fetchProfile(data.user.id);
+      await fetchProfile(data.user.id, email);
     }
     return data;
   };
@@ -62,7 +72,7 @@ export const AuthProvider = ({ children }) => {
   const signIn = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    if (data.user) await fetchProfile(data.user.id);
+    if (data.user) await fetchProfile(data.user.id, email);
     return data;
   };
 
