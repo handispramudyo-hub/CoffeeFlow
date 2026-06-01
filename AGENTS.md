@@ -1,54 +1,31 @@
 # CoffeeFlow — AGENTS.md
 
 ## Commands
-- `npm run dev` — start Vite dev server
+- `npm run dev` — Vite dev server
 - `npm run build` — production build
-- `npm run lint` — ESLint (only check; no typecheck or test)
+- `npm run lint` — ESLint (no typecheck or test available)
 - `npm run preview` — preview production build
 
 ## Setup
-- **Supabase**: keys hardcoded in `src/lib/supabase.js:3-4`. Do NOT extract to `.env` without updating both the file and the Supabase project keys.
-- **OpenAI**: set `VITE_OPENAI_API_KEY` in `.env` (project root). Used in `src/pages/AiAssistant.jsx`. OpenAI client loaded dynamically via `import("openai")`.
-- No `.env` exists by default; create one if needed.
+- **Supabase**: anon key in `src/lib/supabase.js:3-4`. Committed in source — do not commit other secrets.
+- **OpenAI**: set `VITE_OPENAI_API_KEY` in `.env` (project root). Used in `src/pages/AiAssistant.jsx`. OpenAI client loaded via dynamic `import("openai")`.
+- No `.env` checked in; create one if needed.
 
 ## Architecture
 - **Framework**: React 19 + Vite 8, plain `.jsx` (no TypeScript)
-- **CSS**: Tailwind CSS v3 via PostCSS. Custom `coffee` color palette in `tailwind.config.js` (primary `#6F4E37`). Also `success`/`warning`/`danger` semantic colors.
-- **Routing**: `react-router-dom` v7. Public: `/` (Landing), `/login`, `/register`, `/menu-qr` (public menu). Protected: `/dashboard/*` with nested routes.
-- **Auth**: Supabase Auth via `src/contexts/AuthContext.jsx`. Role-based access (owner/manager/cashier) with `ROLE_PERMISSIONS` map. `<ProtectedRoute feature="">` guards per-page.
+- **CSS**: Tailwind v3 via PostCSS. Custom `coffee` palette in `tailwind.config.js` (primary `#6F4E37`). Also `success`/`warning`/`danger` semantic colors. Font: Inter via Google Fonts.
+- **Routing**: `react-router-dom` v7. Public: `/` (Landing), `/login`, `/register`, `/menu-qr` (public menu). Protected: `/dashboard/*` with nested routes and `<ProtectedRoute feature="">` role-based guards.
+- **Auth**: Supabase Auth via `src/contexts/AuthContext.jsx`. Roles: owner/manager/cashier with `ROLE_PERMISSIONS` map. `<RoleGate feature="">` for conditional rendering inside pages.
 - **Entry**: `index.html` → `src/main.jsx` → `src/App.jsx`
-- **UI Components**: Reusable primitives in `src/components/ui/` (Button, Card, Input, Modal, Badge, Table, StatCard, EmptyState). Uses `framer-motion` for animations and `lucide-react` for icons.
-- **Data Layer**: Supabase queries in page components. `src/services/api.js` provides a wrapper.
-- **DB Schema**: `src/database/schema.sql` — full PostgreSQL schema with RPC functions.
-- **Icons**: `lucide-react` (not `react-icons/fi`).
-- **Animation**: `framer-motion` (`motion.div`, `AnimatePresence`).
+- **UI**: Reusable primitives in `src/components/ui/` (Button, Card, Input, Modal, Badge, Table, StatCard, EmptyState). Uses `framer-motion` for animations and `lucide-react` for icons.
+- **Data**: Supabase queries in page components or via `src/services/api.js` wrapper.
+- **DB**: `src/database/schema.sql` — full PostgreSQL schema with RPC functions and seed data.
+- **Deploy**: Netlify via `netlify.toml` (SPA redirect `/*` → `/index.html`, publish `dist/`).
 
-## Key conventions
-- UI brand name is **CoffeeFlow** throughout.
-- Sidebar uses `bg-coffee-700` active state with `rounded-xl` nav items.
+## Conventions
+- Brand name: **CoffeeFlow** throughout.
+- Sidebar: `bg-coffee-700` active state, `rounded-xl` nav items.
 - Toast: `react-hot-toast`, dark style (`#3E2723` bg, `#FDF8F0` text).
-- All dashboard routes are under `/dashboard/*`. Landing page is at `/`.
-- Public QR menu at `/menu-qr`.
-
-## Routes overview
-| Path | Page | Auth |
-|------|------|------|
-| `/` | Landing | Public |
-| `/login` | Login | Public |
-| `/register` | Register | Public |
-| `/menu-qr` | QR Menu | Public |
-| `/dashboard` | Dashboard | Protected (dashboard) |
-| `/dashboard/menu` | Menu Management | Protected (menu) |
-| `/dashboard/pos` | POS System | Protected (pos) |
-| `/dashboard/inventory` | Inventory | Protected (inventory) |
-| `/dashboard/reports` | Reports | Protected (reports) |
-| `/dashboard/customers` | Customers | Protected (customers) |
-| `/dashboard/loyalty` | Loyalty | Protected (loyalty) |
-| `/dashboard/ai` | AI Assistant | Protected (ai) |
-| `/dashboard/settings` | Settings | Protected (settings) |
-
-## Important notes
+- Icons: `lucide-react` (preferred). `react-icons` also available as dependency but avoid.
 - No test framework or test scripts configured.
-- No typecheck step available.
-- Supabase anon key committed in source — do not commit other secrets.
-- Pre-existing lint errors exist in `AuthContext.jsx` and several pages (function-before-declaration in useEffect). These are known and not introduced by feature work.
+- Known pre-existing lint error: `react-refresh/only-export-components` in `src/contexts/AuthContext.jsx:6` — leave as-is.
