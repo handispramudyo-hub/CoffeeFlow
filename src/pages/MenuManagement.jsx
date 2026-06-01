@@ -57,7 +57,7 @@ export default function MenuManagement() {
         <h2 className="text-xl font-bold text-coffee-700 mb-4">
           Tambah Menu Baru
         </h2>
-        <form onSubmit={handleAddMenu} className="flex gap-4 items-end">
+        <form onSubmit={handleAddMenu} className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-coffee-600 mb-1">Nama Menu</label>
             <input
@@ -68,7 +68,7 @@ export default function MenuManagement() {
               placeholder="Contoh: Latte"
             />
           </div>
-          <div className="w-40">
+          <div className="w-full md:w-40">
             <label className="block text-coffee-600 mb-1">Harga (Rp)</label>
             <input
               type="number"
@@ -80,7 +80,7 @@ export default function MenuManagement() {
           </div>
           <button
             type="submit"
-            className="bg-coffee-600 text-white px-6 py-2 rounded-lg hover:bg-coffee-700 transition-colors font-semibold"
+            className="w-full md:w-auto bg-coffee-600 text-white px-6 py-2 rounded-lg hover:bg-coffee-700 transition-colors font-semibold"
           >
             Tambah
           </button>

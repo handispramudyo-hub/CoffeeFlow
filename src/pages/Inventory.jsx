@@ -35,7 +35,54 @@ export default function Inventory() {
         Inventory Management
       </h1>
 
-      <div className="bg-white rounded-xl shadow-sm border border-coffee-100 overflow-hidden">
+      {/* Mobile: Card Layout */}
+      <div className="md:hidden space-y-4">
+        {items.map((item) => {
+          const isLow = item.stock <= item.min_stock;
+          return (
+            <div
+              key={item.id}
+              className={`bg-white rounded-xl shadow-sm border p-4 ${isLow ? "border-red-200" : "border-coffee-100"}`}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-semibold text-coffee-800">{item.name}</h3>
+                  <p className="text-sm text-coffee-500">{item.unit}</p>
+                </div>
+                {isLow ? (
+                  <span className="bg-red-200 text-red-800 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                    Hampir Habis
+                  </span>
+                ) : (
+                  <span className="bg-green-200 text-green-800 px-2 py-1 rounded text-xs font-bold whitespace-nowrap">
+                    Aman
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-sm text-coffee-500">Stok: </span>
+                  <span className="font-bold text-coffee-800">{item.stock}</span>
+                </div>
+                <button
+                  onClick={() => handleRestock(item.id, item.stock)}
+                  className="bg-coffee-600 text-white px-4 py-2 rounded-lg hover:bg-coffee-700 text-sm transition-colors"
+                >
+                  + Restock (10)
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {items.length === 0 && (
+          <p className="text-center text-coffee-500 py-8">
+            Belum ada data bahan.
+          </p>
+        )}
+      </div>
+
+      {/* Desktop: Table Layout */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-coffee-100 overflow-x-auto">
         <table className="w-full text-left">
           <thead className="bg-coffee-100 border-b border-coffee-200">
             <tr>
