@@ -1,8 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
-import RoleGate from "./components/layout/RoleGate";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -37,15 +36,15 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<RoleGate feature="dashboard" fallback={<Navigate to="/dashboard/pos" replace />}><Dashboard /></RoleGate>} />
-            <Route path="menu" element={<ProtectedRoute feature="menu"><MenuManagement /></ProtectedRoute>} />
-            <Route path="pos" element={<ProtectedRoute feature="pos"><PosSystem /></ProtectedRoute>} />
-            <Route path="inventory" element={<ProtectedRoute feature="inventory"><Inventory /></ProtectedRoute>} />
-            <Route path="reports" element={<ProtectedRoute feature="reports"><Reports /></ProtectedRoute>} />
-            <Route path="customers" element={<ProtectedRoute feature="customers"><Customers /></ProtectedRoute>} />
-            <Route path="loyalty" element={<ProtectedRoute feature="loyalty"><Loyalty /></ProtectedRoute>} />
-            <Route path="ai" element={<ProtectedRoute feature="ai"><AiAssistant /></ProtectedRoute>} />
-            <Route path="settings" element={<ProtectedRoute feature="settings"><Settings /></ProtectedRoute>} />
+            <Route index element={<Dashboard />} />
+            <Route path="menu" element={<MenuManagement />} />
+            <Route path="pos" element={<PosSystem />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="loyalty" element={<Loyalty />} />
+            <Route path="ai" element={<AiAssistant />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
       </BrowserRouter>

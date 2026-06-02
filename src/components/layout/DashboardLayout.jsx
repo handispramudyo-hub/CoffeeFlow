@@ -6,28 +6,26 @@ import {
 } from "lucide-react";
 
 const navConfig = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", feature: "dashboard", end: true },
-  { to: "/dashboard/menu", icon: Coffee, label: "Menu", feature: "menu" },
-  { to: "/dashboard/pos", icon: ShoppingCart, label: "POS", feature: "pos" },
-  { to: "/dashboard/inventory", icon: Package, label: "Inventory", feature: "inventory" },
-  { to: "/dashboard/reports", icon: BarChart3, label: "Reports", feature: "reports" },
-  { to: "/dashboard/customers", icon: Users, label: "Customers", feature: "customers" },
-  { to: "/dashboard/loyalty", icon: Gift, label: "Loyalty", feature: "loyalty" },
-  { to: "/dashboard/ai", icon: Bot, label: "AI Assistant", feature: "ai" },
-  { to: "/dashboard/settings", icon: Settings, label: "Settings", feature: "settings" },
+  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/dashboard/menu", icon: Coffee, label: "Menu" },
+  { to: "/dashboard/pos", icon: ShoppingCart, label: "POS" },
+  { to: "/dashboard/inventory", icon: Package, label: "Inventory" },
+  { to: "/dashboard/reports", icon: BarChart3, label: "Reports" },
+  { to: "/dashboard/customers", icon: Users, label: "Customers" },
+  { to: "/dashboard/loyalty", icon: Gift, label: "Loyalty" },
+  { to: "/dashboard/ai", icon: Bot, label: "AI Assistant" },
+  { to: "/dashboard/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { profile, signOut, hasPermission } = useAuth();
+  const { profile, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
   };
-
-  const allowedNav = navConfig.filter((n) => hasPermission(n.feature));
 
   return (
     <div className="flex h-screen bg-coffee-50 overflow-hidden">
@@ -44,7 +42,7 @@ export default function DashboardLayout() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-thin">
-          {allowedNav.map((item) => (
+          {navConfig.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
