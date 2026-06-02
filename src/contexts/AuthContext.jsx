@@ -10,32 +10,31 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = async (userId) => {
+    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
+    if (data) { setProfile(data); return; }
+    if (error && error.code !== 'PGRST116') {
+      console.error("fetchProfile error:", error.message);
+    }
+  };
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) fetchProfile(u.id, u.email);
+      if (u) fetchProfile(u.id);
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user ?? null;
       setUser(u);
-      if (u) fetchProfile(u.id, u.email);
+      if (u) fetchProfile(u.id);
       else setProfile(null);
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const fetchProfile = async (userId, userEmail) => {
-    const { data, error } = await supabase.from("users").select("*").eq("id", userId).single();
-    if (data) { setProfile(data); return; }
-    if (error && error.code !== 'PGRST116') {
-      console.error("fetchProfile error:", error.message);
-      return;
-    }
-  };
 
   const signUp = async (email, password, fullName) => {
     const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
